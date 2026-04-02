@@ -37,8 +37,8 @@ mongoose.connect(connectionString).then(()=>{
     console.log("Database Connection Failed", err)
 })
 
-app.use("/users", userRouter)
-app.use("/products", productRouter)
+app.use("/api/users", userRouter)
+app.use("/api/products", productRouter)
 
 app.listen(5000, ()=>{
     console.log("Server is running on port 5000")
