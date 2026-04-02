@@ -11,7 +11,11 @@ export function createUser(req, res){
         lastName: req.body.lastName,
         email: req.body.email,
         password: passwordHash,
-        phone: req.body.phone
+        phone: req.body.phone,
+        role: req.body.role,
+        isEmailVerified: req.body.isEmailVerified,
+        profilePicture: req.body.profilePicture,
+        isBlocked: req.body.isBlocked
     }
 
     const user = new UserModel(userData)
