@@ -5,12 +5,15 @@ import dotenv from "dotenv";
 import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
 import jwt from "jsonwebtoken";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express()
 
 app.use(bodyParser.json())
+
+app.use(cors());
 
 app.use((req, res, next) => {
     const value = req.header("Authorization")
