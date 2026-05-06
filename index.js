@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
+import orderRouter from "./routes/orderRouter.js";
 import jwt from "jsonwebtoken";
 import cors from "cors";
 
@@ -42,6 +43,7 @@ mongoose.connect(connectionString).then(()=>{
 
 app.use("/api/users", userRouter)
 app.use("/api/products", productRouter)
+app.use("/api/orders", orderRouter)
 
 app.listen(5000, ()=>{
     console.log("Server is running on port 5000")
