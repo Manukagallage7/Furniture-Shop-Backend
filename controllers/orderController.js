@@ -1,4 +1,5 @@
 import order from '../models/orderModel.js';
+import Product from '../models/productModel.js';
 
 export async function createOrder(req, res) {
     if(req.user == null){
@@ -65,6 +66,35 @@ export async function createOrder(req, res) {
     }catch(error){
         res.status(500).json({
             message: "Error Creating Order",
+            error: error.message
+        })
+    }
+}
+
+export async function getOrders(req, res) {
+    if(req.user == null){
+        return res.status(401).json({
+            message: "Please Login to View Orders"
+        })
+    }
+    try {
+        if(req.user.role == "admin") {
+            const orders = await order.find().sort({ date: -1 })
+            res.status(200).json({
+                message: "Orders Retrieved Successfully",
+                orders: orders
+            })
+        }
+        else {
+            const orders = await order.find({ email: req.user.email }).sort({ date: -1 })
+            res.status(200).json({
+                message: "Orders Retrieved Successfully",
+                orders: orders
+            })
+        }
+    } catch(error){
+        res.status(500).json({
+            message: "Error Retrieving Orders",
             error: error.message
         })
     }
