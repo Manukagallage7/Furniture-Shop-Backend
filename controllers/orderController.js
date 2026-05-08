@@ -50,7 +50,7 @@ export async function createOrder(req, res) {
         const newOrder = new order({
             orderId: orderId,
             email: req.user.email,
-            name: req.user.firstName + " " + req.user.lastName,
+            name: req.body.name,
             phone: req.body.phone,
             address: req.body.address,
             items: items,
