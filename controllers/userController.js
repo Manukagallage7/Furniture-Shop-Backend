@@ -80,3 +80,16 @@ export function loginUser(req, res){
             })
         })
 }
+
+export function getUser(req, res) {
+    if(req.user == null) {
+        return res.status(404).json({
+            message: "User not found"
+        })
+    }else {
+        res.status(200).json({
+            message: "User found",
+            data: req.user
+        })
+    }
+}
