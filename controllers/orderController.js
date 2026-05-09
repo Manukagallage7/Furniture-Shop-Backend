@@ -18,7 +18,7 @@ export async function createOrder(req, res) {
             orderId = "FRD" + newOrderIdWithoutPrefix.toString().padStart(6, "0")
         }
         const items = []
-        let total = 0
+        let subtotal = 0
 
         if(req.body.items !== null && Array.isArray(req.body.items)){
             for(let i = 0; i < req.body.items.length; i++){
@@ -39,13 +39,16 @@ export async function createOrder(req, res) {
                     actualPrice: product.actualPrice,
                     images: product.images[0],
                 })
-                total += product.actualPrice * item.quantity
+                subtotal += product.actualPrice * item.quantity
             }
         }else {
             return res.status(400).json({
                 message: "Invalid Items Format."
             })
         }
+
+        const shippingCharges = req.body.shippingCharges || 350
+        const total = req.body.total || (subtotal + shippingCharges)
 
         const newOrder = new order({
             orderId: orderId,
@@ -54,6 +57,8 @@ export async function createOrder(req, res) {
             phone: req.body.phone,
             address: req.body.address,
             items: items,
+            subtotal: subtotal,
+            shippingCharges: shippingCharges,
             total: total
         })
         
@@ -72,6 +77,8 @@ export async function createOrder(req, res) {
 }
 
 export async function getOrders(req, res) {
+    const page = parseInt(req.params.page) || 1
+    const limit = parseInt(req.params.limit) || 10
     if(req.user == null){
         return res.status(401).json({
             message: "Please Login to View Orders"
@@ -79,22 +86,59 @@ export async function getOrders(req, res) {
     }
     try {
         if(req.user.role == "admin") {
-            const orders = await order.find().sort({ date: -1 })
+            const ordersCount = await order.countDocuments()
+            const totalPages = Math.ceil(ordersCount / limit)
+            const orders = await order.find().sort({ date: -1 }).skip((page - 1) * limit).limit(limit)
             res.status(200).json({
                 message: "Orders Retrieved Successfully",
-                orders: orders
+                orders: orders,
+                totalPages: totalPages
             })
         }
         else {
-            const orders = await order.find({ email: req.user.email }).sort({ date: -1 })
+            const ordersCount = await order.countDocuments()
+            const totalPages = Math.ceil(ordersCount / limit)
+            const orders = await order.find({ email: req.user.email }).sort({ date: -1 }).skip((page - 1) * limit).limit(limit)
             res.status(200).json({
                 message: "Orders Retrieved Successfully",
-                orders: orders
+                orders: orders,
+                totalPages: totalPages
             })
         }
     } catch(error){
         res.status(500).json({
             message: "Error Retrieving Orders",
+            error: error.message
+        })
+    }
+}
+
+export async function getOrderById(req, res) {
+    if(req.user == null){
+        return res.status(401).json({
+            message: "Please Login to View Order"
+        })
+    }
+    try {
+        const orderId = req.params.id
+        const orderData = await order.findOne({ orderId: orderId })
+        if(!orderData){
+            return res.status(404).json({
+                message: "Order not found."
+            })
+        }
+        if(req.user.role !== "admin" && orderData.email !== req.user.email){
+            return res.status(403).json({
+                message: "You are not authorized to view this order."
+            })
+        }
+        res.status(200).json({
+            message: "Order Retrieved Successfully",
+            order: orderData
+        })
+    } catch(error){
+        res.status(500).json({
+            message: "Error Retrieving Order",
             error: error.message
         })
     }
