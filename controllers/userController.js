@@ -93,3 +93,35 @@ export function getUser(req, res) {
         })
     }
 }
+
+export async function getUsers(req, res) {
+    const page = parseInt(req.params.page) || 1
+    const limit = parseInt(req.params.limit) || 10
+
+    if(req.user == null) {
+        return res.status(401).json({
+            message: "Please Login to View Users"
+        })
+    }
+    try{
+        if(req.user.role == "admin") {
+            const usersCount = await UserModel.countDocuments()
+            const totalPages = Math.ceil(usersCount / limit)
+            const users = await UserModel.find().sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit)
+            res.status(200).json({
+                message: "Users Retrieved Successfully",
+                users: users,
+                totalPages: totalPages
+            })
+        } else {
+            return res.status(403).json({
+                message: "Access Denied"
+            })
+        }
+    } catch(err) {
+        res.status(500).json({
+            message: "Error retrieving users",
+            error: err.message
+        })
+    }
+}
