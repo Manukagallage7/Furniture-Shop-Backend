@@ -92,17 +92,19 @@ export async function getOrders(req, res) {
             res.status(200).json({
                 message: "Orders Retrieved Successfully",
                 orders: orders,
-                totalPages: totalPages
+                totalPages: totalPages,
+                total: ordersCount
             })
         }
         else {
-            const ordersCount = await order.countDocuments()
+            const ordersCount = await order.countDocuments({ email: req.user.email })
             const totalPages = Math.ceil(ordersCount / limit)
             const orders = await order.find({ email: req.user.email }).sort({ date: -1 }).skip((page - 1) * limit).limit(limit)
             res.status(200).json({
                 message: "Orders Retrieved Successfully",
                 orders: orders,
-                totalPages: totalPages
+                totalPages: totalPages,
+                total: ordersCount
             })
         }
     } catch(error){
@@ -140,6 +142,32 @@ export async function getOrderById(req, res) {
         res.status(500).json({
             message: "Error Retrieving Order",
             error: error.message
+        })
+    }
+}
+
+export async function updateOrder(req,res) {
+    if(req.user == null) {
+        return res.status(401).json({
+            message : "Please Login First"
+        })
+    }
+
+    if(req.user.role == "admin") {
+        const orderId = req.params.orderId
+        const status = req.body.status
+        const notes = req.body.notes
+
+        order.findOneAndUpdate(
+            {orderId: orderId},
+            {status: status},
+            {notes: notes},
+            {new : true}
+        )
+    }
+    else {
+        return res.status(401).json({
+            message: "You are not authorized to update orders"
         })
     }
 }
