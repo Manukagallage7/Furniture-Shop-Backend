@@ -57,6 +57,7 @@ export async function createOrder(req, res) {
             phone: req.body.phone,
             address: req.body.address,
             items: items,
+            notes: req.body.notes,
             subtotal: subtotal,
             shippingCharges: shippingCharges,
             total: total
@@ -146,28 +147,45 @@ export async function getOrderById(req, res) {
     }
 }
 
-export async function updateOrder(req,res) {
-    if(req.user == null) {
+export async function updateOrder(req, res) {
+    if (!req.user) {
         return res.status(401).json({
-            message : "Please Login First"
+            message: "Please Login First"
         })
     }
 
-    if(req.user.role == "admin") {
-        const orderId = req.params.orderId
-        const status = req.body.status
-        const notes = req.body.notes
-
-        order.findOneAndUpdate(
-            {orderId: orderId},
-            {status: status},
-            {notes: notes},
-            {new : true}
-        )
-    }
-    else {
+    if (req.user.role !== "admin") {
         return res.status(401).json({
             message: "You are not authorized to update orders"
+        })
+    }
+
+    try {
+        const { orderId } = req.params
+        const { status, notes } = req.body
+
+        const updatedOrder = await order.findOneAndUpdate(
+            { orderId: orderId },
+            { status: status, notes: notes },
+            { new: true }
+        )
+
+        if (!updatedOrder) {
+            return res.status(404).json({
+                message: "Order not found"
+            })
+        }
+
+        res.json({
+            success: true,
+            message: "Order updated successfully",
+            order: updatedOrder
+        })
+    } catch (err) {
+        console.error("Error updating order:", err)
+        res.status(500).json({
+            message: "Error updating order",
+            error: err.message
         })
     }
 }
