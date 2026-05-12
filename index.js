@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
 import orderRouter from "./routes/orderRouter.js";
+import contactRouter from "./routes/contactRoute.js";
 import jwt from "jsonwebtoken";
 import cors from "cors";
 
@@ -20,7 +21,8 @@ app.use((req, res, next) => {
     const publicRoutes = [
         "/api/users/login",
         "/api/users/register",
-        "/api/users/google-login"
+        "/api/users/google-login",
+        "/api/contact/submit"
     ]
 
     if (publicRoutes.some((route) => req.originalUrl.startsWith(route))) {
@@ -54,6 +56,7 @@ mongoose.connect(connectionString).then(()=>{
 app.use("/api/users", userRouter)
 app.use("/api/products", productRouter)
 app.use("/api/orders", orderRouter)
+app.use("/api/contact", contactRouter)
 
 app.listen(5000, ()=>{
     console.log("Server is running on port 5000")
