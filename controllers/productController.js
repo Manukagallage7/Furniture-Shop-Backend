@@ -136,3 +136,52 @@ export async function getProductInfo(req, res){
         })
     }
 }
+
+export async function getProductsByCategory(req, res) {
+    try {
+        const category = req.params.category
+
+        if(req.user && req.user.role == "admin"){
+            const response = await ProductModel.find({ category: category })
+            res.status(200).json({
+                message: "Product retrieved successfully",
+                product: response
+            })
+        } else {
+            const response = await ProductModel.find({ category: category, isAvailable: true })
+            res.status(200).json({
+                message: "Product retrieved successfully",
+                product: response
+            })
+        }
+    } catch (err) {
+        res.status(500).json({
+            message: "Error retrieving product",
+            error: err.message
+        })
+    }
+}
+
+export async function searchProducts(req, res) {
+    try {
+        const query = req.params.query
+        if(req.user.role == "admin"){
+            const response = await ProductModel.find({ name: { $regex: query, $options: 'i' } })
+            res.status(200).json({
+                message: "Product retrieved successfully",
+                product: response
+            })
+        } else {
+            const response = await ProductModel.find({ name: { $regex: query, $options: 'i' }, isAvailable: true })
+            res.status(200).json({
+                message: "Product retrieved successfully",
+                product: response
+            })
+        }
+    } catch (err) {
+        res.status(500).json({
+            message: "Error retrieving product",
+            error: err.message
+        })
+    }
+}
