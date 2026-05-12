@@ -16,8 +16,6 @@ const userSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: true,
-        unique: true
     },
     password: {
         type: String,
@@ -39,6 +37,14 @@ const userSchema = new mongoose.Schema({
     isEmailVerified: {
         type: Boolean,
         default: false
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    address: {
+        type: String,
+        default: ""
     }
 })
 
