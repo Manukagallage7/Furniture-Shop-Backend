@@ -17,6 +17,16 @@ app.use(bodyParser.json())
 app.use(cors());
 
 app.use((req, res, next) => {
+    const publicRoutes = [
+        "/api/users/login",
+        "/api/users/register",
+        "/api/users/google-login"
+    ]
+
+    if (publicRoutes.some((route) => req.originalUrl.startsWith(route))) {
+        return next()
+    }
+
     const value = req.header("Authorization")
     if (typeof value === 'string' && value.length > 0) {
         const token = value.replace(/^Bearer\s+/i, "")
