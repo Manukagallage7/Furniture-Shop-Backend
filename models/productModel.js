@@ -32,6 +32,7 @@ const productSchema = new mongoose.Schema({
     category: {
         type: String,
         required: true,
+        enum: ["Furniture Collections", "Living Room", "Bedroom", "Dining Room", "Office", "Outdoor", "Decor", "Lighting", "Rugs", "Storage", "Kids", "Pet", "Other"],
         default: "Furniture Collections"
     },
     stock: {
