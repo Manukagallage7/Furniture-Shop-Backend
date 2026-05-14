@@ -1,7 +1,21 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import UserModel from "../models/userModel.js";
+import OTPModel from "../models/otpModel.js";
 import axios from "axios";
+import nodemailer from "nodemailer";
+
+function getTransporter() {
+    return nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD
+        }
+    });
+}
 
 export function createUser(req, res){
 
@@ -430,6 +444,130 @@ export async function logOutUser(req, res) {
     } else {
         res.status(200).json({
             message: "Logout successful"
+        })
+    }
+}
+
+export async function sendOTP(req, res) {
+    const email = req.body.email
+
+    try {
+        const user = await UserModel.findOne({ email: email })
+        if(!user) {
+            return res.status(404).json({
+                message: "User not found"
+            })
+        }
+        const otp = Math.floor(111111 + Math.random() * 999999).toString()
+        console.log(`OTP for ${email}: ${otp}`)
+        // delete all OTPs for this email and persist the new OTP
+        try {
+            await OTPModel.deleteMany({ email: email })
+            const newOTP = new OTPModel({
+                email: email,
+                otp: otp,
+                createdAt: Date.now()
+            })
+            await newOTP.save()
+        } catch(err) {
+            console.error("Error saving OTP to database:", err.message)
+            return res.status(500).json({
+                message: "Error saving OTP",
+                error: err.message
+            })
+        }
+
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+            console.warn("Email configuration missing: EMAIL_USER or EMAIL_PASSWORD is not set")
+            return res.status(200).json({
+                message: "OTP generated successfully. Email service is not configured.",
+                otp: otp
+            })
+        }
+
+        try {
+            const transporter = getTransporter()
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: "Your OTP for Password Reset",
+                text: `Your OTP for password reset is: ${otp}. It is valid for 10 minutes.`
+            }
+            await transporter.sendMail(mailOptions)
+        } catch(err) {
+            console.error("Error sending OTP email:", err.message)
+
+            return res.status(500).json({
+                message: "Error sending OTP email",
+                error: err.message
+            })
+        }
+
+        res.status(200).json({
+            message: "OTP sent successfully",
+            otp: otp
+        })
+    } catch(err) {
+        res.status(500).json({
+            message: "Error sending OTP",
+            error: err.message
+        })
+    }
+}
+
+export async function verifyOTP(req, res) {
+    const email = req.body.email
+    const otp = req.body.otp
+
+    try {
+        const otpRecord = await OTPModel.findOne({ email: email, otp: otp })
+        if(!otpRecord) {
+            return res.status(400).json({
+                message: "Invalid OTP"
+            })
+        } else {
+            const otpAge = (Date.now() - otpRecord.createdAt) / 1000 / 60
+            if(otpAge > 10) {
+                await OTPModel.deleteOne({ _id: otpRecord._id })
+                return res.status(400).json({
+                    message: "OTP expired"
+                })
+            } else {
+                await OTPModel.deleteOne({ _id: otpRecord._id })
+                return res.status(200).json({
+                    message: "OTP verified successfully"
+                })
+            }
+        }
+    } catch(err) {
+        res.status(500).json({
+            message: "Error verifying OTP",
+            error: err.message
+        })
+    }
+}
+
+export async function resetPassword(req, res) {
+    const email = req.body.email
+    const newPassword = req.body.newPassword
+
+    try {
+        const user = await UserModel.findOne({ email: email })
+        if(!user) {
+            return res.status(404).json({
+                message: "User not found"
+            })
+        }
+        const passwordHash = bcrypt.hashSync(newPassword, 10)
+        user.password = passwordHash
+        await user.save()
+        res.status(200).json({
+            message: "Password reset successfully"
+        })
+    } catch(err) {
+        res.status(500).json({
+            message: "Error resetting password",
+            error: err.message
         })
     }
 }
