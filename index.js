@@ -22,6 +22,7 @@ app.use((req, res, next) => {
         "/api/users/login",
         "/api/users/register",
         "/api/users/google-login",
+        "/api/users/send-otp",
         "/api/contact/submit"
     ]
 
