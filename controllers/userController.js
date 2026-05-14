@@ -459,7 +459,6 @@ export async function sendOTP(req, res) {
             })
         }
         const otp = Math.floor(111111 + Math.random() * 999999).toString()
-        console.log(`OTP for ${email}: ${otp}`)
         // delete all OTPs for this email and persist the new OTP
         try {
             await OTPModel.deleteMany({ email: email })
